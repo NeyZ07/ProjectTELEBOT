@@ -240,7 +240,7 @@ def games(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    conn = sqlite3.connect('basadanneh.sql')
+    conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
         'CREATE TABLE IF NOT EXISTS users1 (id int auto_increment primary key, user_id INTEGER, name TEXT, password TEXT)')
@@ -261,7 +261,7 @@ def username(message):
 def userpassword(message):
     password = message.text.strip()
     user_id = message.from_user.id
-    conn = sqlite3.connect('basadanneh.sql')
+    conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO users1 (user_id, name, password) VALUES (%s, '%s', '%s')" % (user_id, name, password))
@@ -300,14 +300,14 @@ def frases(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
-    conn = sqlite3.connect('basadanneh.sql')
+    conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM users1")
     users = cur.fetchall()
     info = ''
     for el in users:
-        info += f'Имя: {el[2]}, пароль: {el[3]}\n'
+        info += f'Имя: {el[1]}, пароль: {el[2]}\n'
     cur.close()
     conn.close()
     bot.send_message(call.message.chat.id, info)
@@ -389,13 +389,13 @@ def riddle_answer(message):
 @bot.message_handler(commands=['profile'])
 def profile(message):
     user_ids = message.from_user.id
-    conn = sqlite3.connect('basadanneh.sql')
+    conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM users1 WHERE user_id == (%s)" % (user_ids))
     users = cur.fetchall()
     for el in users:
-        bot.send_message(message.chat.id, f'Имя: {el[2]}\nПароль: {el[3]}')
+        bot.send_message(message.chat.id, f'Имя: {el[1]}\nПароль: {el[2]}')
     cur.close()
     conn.close()
 
@@ -707,7 +707,7 @@ def answers(message):
 
 
 def users_reply(message):
-    conn = sqlite3.connect('basadanneh.sql')
+    conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM users1")
