@@ -14,17 +14,9 @@ city_qestion = None
 
 hangman_motion = (
     """
-
-
-
-
-
-
-
     ----------
     """,
     """
-
      |    
      |
      |
@@ -128,7 +120,8 @@ not_play = True
 question = ''
 
 name = None
-bot = telebot.TeleBot('6097683861:AAFEoVA90sRXKv0laSRRCYFWks6SBpc3kNQ')
+vk1 = None
+bot = telebot.TeleBot('6097683861:AAFAPxmW4p5BbhV3IgSLRDPtUtX0LAAc50E')
 
 
 @bot.message_handler(commands=['weather'])
@@ -139,10 +132,7 @@ def weather(message):
 
 def whether(message):
     city = message.text.strip().lower()
-    user_ids = message.from_user.id
     res = requests.get(f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API}&units=metric')
-    conn = sqlite3.connect('basadanneh.sql')
-    cur = conn.cursor()
     if res.status_code == 200:
         data = json.loads(res.text)
         temp = data['main']['temp']
@@ -151,31 +141,35 @@ def whether(message):
         bot.reply_to(message, f'Температура: {temp}\n Ветер: {wind}\n Уровень облаков: {clouds}')
     else:
         bot.reply_to(message, 'Неправильно введён город')
-    conn.commit()
-    cur.close()
-    conn.close()
 
 
 @bot.message_handler(commands=['vk'])
 def vk(message):
     vk_ss = ''
-    if vk_ss != '':
+    user_ids = message.from_user.id
+    conn = sqlite3.connect('basadanneh.sqlite')
+    cur = conn.cursor()
+    vk_i = cur.execute("SELECT vk_id FROM users1 WHERE user_id == (%s)" % (user_ids))
+    if vk_i != 'none':
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_ss}"))
+        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_i}"))
         bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:',
                          reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'У меня нет данных вашей страницы. Вы что, от кого-то скрываетесь?',
                          parse_mode='html')
         bot.send_message(message.chat.id, 'Напишите ваш ник в Vk', parse_mode='html')
-        bot.register_next_step_handler(message, vk_1)
+        bot.register_next_step_handler(message, vk_i, vk_1)
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
-def vk_1(message):
+def vk_1(message, vk_i):
     if message.text != '' and message.text != '/vk':
         vk_ss = message.text
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_ss}"))
+        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_i}"))
         bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:',
                          reply_markup=markup)
 
@@ -202,10 +196,9 @@ def bear(message):
     bot.send_message(message.chat.id, ". . . . . .l. . . . . ;. . . /__)")
     bot.send_message(message.chat.id, ". . . . . /. . . . . /__. . . . .)")
     bot.send_message(message.chat.id, ". . . . . '-.. . . . . . .)") \
- \
-    @ bot.message_handler(commands=['beer'])
 
 
+@bot.message_handler(commands=['beer'])
 def beer(message):
     bot.send_message(message.chat.id, '''... |"""""""""""""""""| |\ ''')
     bot.send_message(message.chat.id, "... |Холодное пиво! ||""\__,_")
@@ -243,7 +236,7 @@ def start(message):
     conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
-        'CREATE TABLE IF NOT EXISTS users1 (id int auto_increment primary key, user_id INTEGER, name TEXT, password TEXT)')
+        'CREATE TABLE IF NOT EXISTS users1 (id int auto_increment primary key, user_id INTEGER, name TEXT, password TEXT, vk_id TEXT)')
     conn.commit()
     cur.close()
     conn.close()
@@ -254,17 +247,43 @@ def start(message):
 def username(message):
     global name
     name = message.text.strip()
-    bot.send_message(message.chat.id, 'Введите пароль', parse_mode='html')
-    bot.register_next_step_handler(message, userpassword)
+    m = []
+    for k in name:
+        m.append(k)
+    if m[0] == '/':
+        bot.reply_to(message, 'неправильно введено имя')
+        bot.send_message(message.chat.id, 'пройдите регистрацию заново')
+    else:
+        bot.send_message(message.chat.id, 'Введите ник от вк, если нету введите none', parse_mode='html')
+        bot.register_next_step_handler(message, VK)
 
+
+def VK(message):
+    global vk1
+    vk1 = message.text.strip()
+    m = []
+    for k in vk1:
+        m.append(k)
+    if m[0] == '/':
+        bot.reply_to(message, 'неправильно введён ник')
+        bot.send_message(message.chat.id, 'пройдите регистрацию заново')
+    else:
+        bot.send_message(message.chat.id, 'Введите пароль', parse_mode='html')
+        bot.register_next_step_handler(message, userpassword)
 
 def userpassword(message):
     password = message.text.strip()
+    m = []
+    for k in password:
+        m.append(k)
+    if m[0] == '/':
+        bot.reply_to(message, 'неправильно введён пароль')
+        bot.send_message(message.chat.id, 'пройдите регистрацию заново')
     user_id = message.from_user.id
     conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO users1 (user_id, name, password) VALUES (%s, '%s', '%s')" % (user_id, name, password))
+        "INSERT INTO users1 (user_id, name, password, vk_id) VALUES (%s, '%s', '%s', '%s')" % (user_id, name, password, vk1))
     conn.commit()
     cur.close()
     conn.close()
@@ -307,7 +326,7 @@ def callback(call):
     users = cur.fetchall()
     info = ''
     for el in users:
-        info += f'Имя: {el[1]}, пароль: {el[2]}\n'
+        info += f'Имя: {el[2]}, пароль: ******\n'
     cur.close()
     conn.close()
     bot.send_message(call.message.chat.id, info)
@@ -361,7 +380,6 @@ def riddles(message):
 
 def riddle_answer(message):
     global riddle_qestion
-    user_ids = message.from_user.id
     if riddle_qestion == 1 and message.text.strip().lower() == 'морской':
         bot.send_message(message.chat.id, 'Правильно')
     elif riddle_qestion == 2 and (message.text.strip().lower() == 'пять' or message.text.strip().lower() == '5'):
@@ -395,7 +413,7 @@ def profile(message):
         "SELECT * FROM users1 WHERE user_id == (%s)" % (user_ids))
     users = cur.fetchall()
     for el in users:
-        bot.send_message(message.chat.id, f'Имя: {el[1]}\nПароль: {el[2]}')
+        bot.send_message(message.chat.id, f'Имя: {el[1]}\nПароль: ******')
     cur.close()
     conn.close()
 
@@ -714,7 +732,7 @@ def users_reply(message):
     users = cur.fetchall()
     info = ''
     for el in users:
-        info += f'Имя: {el[2]}, пароль: {el[3]}\n'
+        info += f'Имя: {el[2]}, пароль: ******\n'
     cur.close()
     conn.close()
     bot.send_message(message.chat.id, info)
