@@ -121,7 +121,7 @@ question = ''
 
 name = None
 vk1 = None
-bot = telebot.TeleBot('6097683861:AAFAPxmW4p5BbhV3IgSLRDPtUtX0LAAc50E')
+bot = telebot.TeleBot('6097683861:AAH__nIl7lmDINzHUi6aFzCzCXd9EFoPLE0')
 
 
 @bot.message_handler(commands=['weather'])
@@ -146,32 +146,23 @@ def whether(message):
 @bot.message_handler(commands=['vk'])
 def vk(message):
     vk_ss = ''
-    user_ids = message.from_user.id
-    conn = sqlite3.connect('basadanneh.sqlite')
-    cur = conn.cursor()
-    vk_i = cur.execute("SELECT vk_id FROM users1 WHERE user_id == (%s)" % (user_ids))
-    if vk_i != 'none':
+    if vk_ss != '':
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_i}"))
-        bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:',
-                         reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_ss}"))
+        bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:', reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'У меня нет данных вашей страницы. Вы что, от кого-то скрываетесь?',
                          parse_mode='html')
         bot.send_message(message.chat.id, 'Напишите ваш ник в Vk', parse_mode='html')
-        bot.register_next_step_handler(message, vk_i, vk_1)
-    conn.commit()
-    cur.close()
-    conn.close()
+        bot.register_next_step_handler(message, vk_1)
 
 
-def vk_1(message, vk_i):
+def vk_1(message):
     if message.text != '' and message.text != '/vk':
         vk_ss = message.text
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_i}"))
-        bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:',
-                         reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("ВК", url=f"https://vk.com/{vk_ss}"))
+        bot.send_message(message.chat.id, 'Перейти по ссылке на вашу страницу ВК:', reply_markup=markup)
 
 
 @bot.message_handler(commands=['bear'])
@@ -195,8 +186,7 @@ def bear(message):
     bot.send_message(message.chat.id, ". . . . . ',. . . . . ',-~'`. ;)")
     bot.send_message(message.chat.id, ". . . . . .l. . . . . ;. . . /__)")
     bot.send_message(message.chat.id, ". . . . . /. . . . . /__. . . . .)")
-    bot.send_message(message.chat.id, ". . . . . '-.. . . . . . .)") \
-
+    bot.send_message(message.chat.id, ". . . . . '-.. . . . . . .)")
 
 @bot.message_handler(commands=['beer'])
 def beer(message):
@@ -236,7 +226,7 @@ def start(message):
     conn = sqlite3.connect('basadanneh.sqlite')
     cur = conn.cursor()
     cur.execute(
-        'CREATE TABLE IF NOT EXISTS users1 (id int auto_increment primary key, user_id INTEGER, name TEXT, password TEXT, vk_id TEXT)')
+        'CREATE TABLE IF NOT EXISTS users1 (id int auto_increment primary key, user_id INTEGER, name TEXT, password TEXT)')
     conn.commit()
     cur.close()
     conn.close()
@@ -254,22 +244,23 @@ def username(message):
         bot.reply_to(message, 'неправильно введено имя')
         bot.send_message(message.chat.id, 'пройдите регистрацию заново')
     else:
-        bot.send_message(message.chat.id, 'Введите ник от вк, если нету введите none', parse_mode='html')
-        bot.register_next_step_handler(message, VK)
-
-
-def VK(message):
-    global vk1
-    vk1 = message.text.strip()
-    m = []
-    for k in vk1:
-        m.append(k)
-    if m[0] == '/':
-        bot.reply_to(message, 'неправильно введён ник')
-        bot.send_message(message.chat.id, 'пройдите регистрацию заново')
-    else:
         bot.send_message(message.chat.id, 'Введите пароль', parse_mode='html')
         bot.register_next_step_handler(message, userpassword)
+
+
+# def VK(message):
+    # global vk1
+    # vk1 = message.text.strip()
+    # m = []
+    # for k in vk1:
+    #     m.append(k)
+    # if m[0] == '/':
+    #     bot.reply_to(message, 'неправильно введён ник')
+    #     bot.send_message(message.chat.id, 'пройдите регистрацию заново')
+    # else:
+    #     bot.send_message(message.chat.id, 'Введите пароль', parse_mode='html')
+    #     bot.register_next_step_handler(message, userpassword)
+
 
 def userpassword(message):
     password = message.text.strip()
@@ -279,18 +270,21 @@ def userpassword(message):
     if m[0] == '/':
         bot.reply_to(message, 'неправильно введён пароль')
         bot.send_message(message.chat.id, 'пройдите регистрацию заново')
-    user_id = message.from_user.id
-    conn = sqlite3.connect('basadanneh.sqlite')
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO users1 (user_id, name, password, vk_id) VALUES (%s, '%s', '%s', '%s')" % (user_id, name, password, vk1))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton('список пользователей', callback_data='users'))
-    bot.send_message(message.chat.id, 'пользователь зареган', reply_markup=markup)
+    try:
+        user_id = message.from_user.id
+        conn = sqlite3.connect('basadanneh.sqlite')
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users1 (user_id, name, password) VALUES ('%s', '%s', '%s')" % (
+            user_id, name, password))
+        conn.commit()
+        cur.close()
+        conn.close()
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton('список пользователей', callback_data='users'))
+        bot.send_message(message.chat.id, 'пользователь зареган', reply_markup=markup)
+    except sqlite3.Error:
+        bot.send_message(message.chat.id, 'Вы уже зареганы. Обмануть решили?')
 
 
 @bot.message_handler(commands=['help'])
@@ -326,7 +320,7 @@ def callback(call):
     users = cur.fetchall()
     info = ''
     for el in users:
-        info += f'Имя: {el[2]}, пароль: ******\n'
+        info += f'Имя: {el[1]}, пароль: ******\n'
     cur.close()
     conn.close()
     bot.send_message(call.message.chat.id, info)
@@ -662,7 +656,7 @@ def answers(message):
         image = '8марта.jpg'
         file = open('./' + image, 'rb')
         bot.send_photo(message.chat.id, file)
-    elif message.text == 'Хорошо' or message.text == 'хорошо':
+    elif message.text == 'Хорошо' or message.text == 'хорошо' or message.text == 'Нормально' or message.text == 'нормально':
         bot.send_message(message.chat.id, 'Это хорошо, что хорошо', parse_mode='html')
     elif message.text == 'Как дела?' or message.text == 'как дела?' or message.text == 'Как дела' or message.text == 'как дела' or message.text == 'Как ты себя чувствуешь?' or message.text == 'как ты себя чувствуешь?' or message.text == 'Как ты себя чувствуешь' or message.text == 'как ты себя чувствуешь':
         bot.send_message(message.chat.id, 'Отлично, а у тебя?', parse_mode='html')
@@ -732,7 +726,7 @@ def users_reply(message):
     users = cur.fetchall()
     info = ''
     for el in users:
-        info += f'Имя: {el[2]}, пароль: ******\n'
+        info += f'Имя: {el[1]}, пароль: ******\n'
     cur.close()
     conn.close()
     bot.send_message(message.chat.id, info)
